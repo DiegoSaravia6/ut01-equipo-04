@@ -1,16 +1,11 @@
 package ucu.edu.aed.ejercicio26;
 import java.util.Stack;
-
-import ucu.edu.aed.tda.Pila;
-
 import java.util.List;
-import java.util.ArrayList;
 
 public class ExpresionStack {
 
     public boolean controlCorchetes(List<Character> listaDeEntrada){
 
-        
 
         if (listaDeEntrada == null){
             throw new IllegalArgumentException("La lista de entrada no puede ser nula");
