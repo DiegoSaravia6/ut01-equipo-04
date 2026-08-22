@@ -1,34 +1,34 @@
-package ucu.edu.aed.ejercicio26;
-import java.util.Stack;
+package ucu.edu.aed.Ej26;
+import ucu.edu.aed.tda.Pila;
 import java.util.List;
 
-public class ExpresionStack {
+public class Expresion {
+
 
     public boolean controlCorchetes(List<Character> listaDeEntrada){
-
-
+        
         if (listaDeEntrada == null){
             throw new IllegalArgumentException("La lista de entrada no puede ser nula");
         }
-        Stack<Character> revision = new Stack<>(); 
+        Pila<Character> revision = new Pila<>();
 
         for(Character caracter : listaDeEntrada){
             if(caracter == '{' || caracter == '(' || caracter == '['){
-                revision.push(caracter);
+                revision.mete(caracter);
             }
 
             if(caracter == '}' || caracter == ')' || caracter == ']'){
-                if(revision.isEmpty()){
+                if(revision.esVacio()){
                     return false;
                 }
 
-                Character tope = revision.peek();
+                Character tope = revision.tope();
 
                 if( (caracter == '}' && tope =='{' ) || 
                 (caracter == ')' && tope == '(')  || 
                 (caracter == ']' && tope == '[')){
 
-                    revision.pop();
+                    revision.saca();
 
                 } else {
                     return false;
@@ -36,8 +36,8 @@ public class ExpresionStack {
             }
         }
 
-        return revision.isEmpty();
-
+        return revision.esVacio();
     }
+    
 
 }

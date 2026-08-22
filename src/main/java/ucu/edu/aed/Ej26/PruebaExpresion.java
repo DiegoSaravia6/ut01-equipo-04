@@ -1,4 +1,4 @@
-package ucu.edu.aed.ejercicio26;
+package ucu.edu.aed.Ej26;
 
 import java.util.List;
 import java.util.ArrayList;
