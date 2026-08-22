@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="Ej18.listaEnlazadaTest" time="0.037" tests="3" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="Cp1252"/>
+    <property name="java.class.path" value="C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18\target\test-classes;C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18\target\classes;C:\Users\Christian\.m2\repository\junit\junit\3.8.1\junit-3.8.1.jar;"/>
+    <property name="java.vm.vendor" value="Microsoft"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="user.variant" value=""/>
+    <property name="java.vendor.url" value="https://www.microsoft.com"/>
+    <property name="user.timezone" value="America/Montevideo"/>
+    <property name="os.name" value="Windows 11"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="UY"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot\bin"/>
+    <property name="sun.java.command" value="C:\Users\Christian\AppData\Local\Temp\surefire7523420735561162397\surefirebooter-20260822164826864_3.jar C:\Users\Christian\AppData\Local\Temp\surefire7523420735561162397 2026-08-22T16-48-25_356-jvmRun1 surefire-20260822164826864_1tmp surefire_0-20260822164826864_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18\target\test-classes;C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18\target\classes;C:\Users\Christian\.m2\repository\junit\junit\3.8.1\junit-3.8.1.jar;"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="C:\Users\Christian"/>
+    <property name="user.language" value="es"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-07-15"/>
+    <property name="java.home" value="C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="surefire.real.class.path" value="C:\Users\Christian\AppData\Local\Temp\surefire7523420735561162397\surefirebooter-20260822164826864_3.jar"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.8+9-LTS"/>
+    <property name="user.name" value="Christian"/>
+    <property name="stdout.encoding" value="Cp1252"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="Microsoft-11933218"/>
+    <property name="localRepository" value="C:\Users\Christian\.m2\repository"/>
+    <property name="java.vendor.url.bug" value="https://github.com/microsoft/openjdk/issues"/>
+    <property name="java.io.tmpdir" value="C:\Users\CHRIST~1\AppData\Local\Temp\"/>
+    <property name="java.version" value="21.0.8"/>
+    <property name="user.dir" value="C:\Users\Christian\Desktop\AED\ut01-equipo-04\src\ProblemSetUt01\Ej18\Ej18"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="native.encoding" value="Cp1252"/>
+    <property name="java.library.path" value="C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\doxygen\bin;C:\Program Files\dotnet\;C:\Program Files\Warp\bin;C:\Users\Christian\AppData\Local\nvm;C:\nvm4w\nodejs;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\PuTTY\;C:\Maven\apache-maven-3.9.8\bin;C:\Users\Christian\AppData\Local\Programs\Python\Python313\Scripts\;C:\Users\Christian\AppData\Local\Programs\Python\Python313\;C:\Users\Christian\AppData\Local\Programs\Python\Launcher\;C:\Users\Christian\AppData\Local\Microsoft\WindowsApps;C:\Users\Christian\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Christian\.dotnet\tools;C:\Users\Christian\AppData\Roaming\npm;C:\Users\Christian\AppData\Local\nvm;C:\nvm4w\nodejs;C:\Users\Christian\AppData\Local\Programs\Windsurf\bin;C:\Users\Christian\AppData\Local\Programs\cursor\resources\app\bin;C:\Program Files\MySQL\MySQL Server 8.4\bin;C:\Program Files\Apache\apache-maven-3.9.16\bin;c:\Users\Christian\.vscode\extensions\vscjava.vscode-java-debug-0.59.0\bundled\scripts\noConfigScripts;."/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="Cp1252"/>
+    <property name="java.vendor" value="Microsoft"/>
+    <property name="java.vm.version" value="21.0.8+9-LTS"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+  </properties>
+  <testcase name="testQuitarListaVacia" classname="Ej18.listaEnlazadaTest" time="0.01"/>
+  <testcase name="testQuitarElementoInexistente" classname="Ej18.listaEnlazadaTest" time="0.0"/>
+  <testcase name="testQuitarElementoExistente" classname="Ej18.listaEnlazadaTest" time="0.001"/>
+</testsuite>
