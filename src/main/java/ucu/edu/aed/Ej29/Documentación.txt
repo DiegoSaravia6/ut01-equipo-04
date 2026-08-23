@@ -1,0 +1,169 @@
+Ejercicio 29
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+DESCRIPCIÓN EN LENGUAJE NATURAL: 
+
+El algoritmo recibe un catálogo de jugadores mediante un TDALista<Jugador>, 
+manteniendo el orden en que fueron registrados.
+
+Primero se consideran los jugadores habilitados. Estos se organizan según los siguientes criterios:
+
+* Mayor división.
+* Ante igualdad de división, menor cantidad de partidas jugadas.
+* Ante igualdad de ambos criterios, se mantiene el orden de registro.
+
+Los primeros 20 jugadores habilitados se incorporan a la lista de convocados. 
+Los jugadores habilitados restantes pasan a la lista de suplentes.
+
+Si no se alcanzan los 20 convocados, se utilizan jugadores lesionados o suspendidos, priorizando la mayor división. 
+Estos jugadores quedan registrados como convocados pendientes.
+
+Si luego de utilizar todos los jugadores disponibles no se alcanzan los 20 convocados, 
+se informa la cantidad de lugares faltantes mediante el déficit.
+
+La lista original de jugadores no es modificada.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ESTRUCTURAS DE DATOS UTILIZADAS:
+
+La entrada utiliza el TDALista<Jugador>, implementado mediante Lista<T>, que corresponde a una lista enlazada simple.
+
+También se utilizan listas enlazadas simples como estructuras auxiliares para almacenar los jugadores habilitados, 
+los no habilitados, los convocados, los suplentes y los pendientes.
+
+Se utiliza esta estructura porque permite recorrer los jugadores en el orden de registro y 
+mantener dicho orden cuando existe empate en los criterios de prioridad. 
+Además, las listas auxiliares permiten procesar los jugadores sin modificar la lista original.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+PRECONDICIONES:
+
+* La lista de jugadores existe.
+* Los elementos de la lista son objetos Jugador válidos.
+* Cada jugador tiene una división y un estado válidos.
+* La cantidad de partidas jugadas es un valor entero no negativo.
+* El orden de la lista representa el orden de registro de los jugadores.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+POSTCONDICIONES:
+
+* Los jugadores habilitados son considerados según el criterio de prioridad establecido.
+* La lista de convocados contiene como máximo 20 jugadores.
+* Los habilitados que no fueron convocados quedan como suplentes.
+* Los jugadores lesionados o suspendidos utilizados para completar los cupos quedan como pendientes.
+* El déficit indica la cantidad de cupos que no pudieron completarse.
+* La lista original no es modificada.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SEUDOCÓDIGO: 
+
+armarConvocatoria(jugadores)
+
+Comienzo
+
+habilitados <- lista vacía
+noHabilitados <- lista vacía
+
+i <- 0
+
+MIENTRAS i < jugadores.tamaño() HACER
+    jugador <- jugadores.obtener(i)
+    SI jugador.estado = HABILITADO ENTONCES
+        insertar jugador en habilitados según su prioridad
+    SINO
+        insertar jugador en noHabilitados según mayor división
+    FIN SI
+    i <- i + 1
+FIN MIENTRAS
+
+
+convocados <- lista vacía
+suplentes <- lista vacía
+pendientes <- lista vacía
+
+i <- 0
+
+MIENTRAS i < habilitados.tamaño() HACER
+    jugador <- habilitados.obtener(i)
+    SI convocados.tamaño() < 20 ENTONCES
+        agregar jugador a convocados
+    SINO
+        agregar jugador a suplentes
+    FIN SI
+    i <- i + 1
+FIN MIENTRAS
+
+
+i <- 0
+
+MIENTRAS i < noHabilitados.tamaño()
+Y convocados.tamaño() < 20 HACER
+    jugador <- noHabilitados.obtener(i)
+    agregar jugador a convocados
+    agregar jugador a pendientes
+    i <- i + 1
+FIN MIENTRAS
+
+
+deficit <- 20 - convocados.tamaño()
+
+SI deficit < 0 ENTONCES
+    deficit <- 0
+FIN SI
+
+devolver ResultadoConvocatoria(
+    convocados,
+    suplentes,
+    pendientes,
+    deficit
+)
+
+Fin
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ORDEN DE TIEMPO DE EJECUCIÓN: 
+
+Sea n la cantidad total de jugadores.
+
+Los jugadores se recorren y se insertan en las listas auxiliares manteniendo el orden de prioridad. 
+Como las estructuras utilizadas son listas enlazadas simples, una inserción ordenada puede requerir recorrer varios elementos.
+En el peor caso, procesar los n jugadores requiere `O(n²)`.
+
+Los recorridos posteriores para formar convocados, suplentes y pendientes requieren O(n).
+
+Por lo tanto, el orden de tiempo total de la solución es: O(n²)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SOLUCIÓN ALTERNATIVA:
+
+Se consideró utilizar una cola con prioridad para organizar los jugadores según los criterios establecidos.
+
+Si la cola con prioridad utiliza una estructura lineal, mantener el orden de prioridad puede requerir 
+recorrer elementos durante las inserciones, obteniendo también O(n²) en el peor caso.
+
+Se mantiene la solución basada en listas enlazadas simples porque permite conservar el orden de registro ante empates 
+y resulta suficiente para resolver el problema sin utilizar estructuras adicionales.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CAMBIO DE CRITERIO DE PRIORIDAD:
+
+Si la prioridad pasara a ser primero por cantidad de partidas jugadas y luego por división, 
+no sería necesario modificar la estructura de datos ni el algoritmo general.
+
+Solamente habría que modificar el criterio de comparación utilizado para ordenar los jugadores habilitados.
+
+El nuevo criterio sería:
+
+* Menor cantidad de partidas jugadas.
+* Ante empate, mayor división.
+* Ante empate, mantener el orden de registro.
+
+La complejidad temporal seguiría siendo O(n²).
