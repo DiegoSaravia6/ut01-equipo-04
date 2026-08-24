@@ -456,7 +456,7 @@ Estas consultas no se limitan solamente a mostrar atributos almacenados, sino qu
 El sistema cuenta con pruebas específicas para el funcionamiento del taller en:
 
 ```text
-src/test/java/ucu/edu/aed/tda/Taller/TallerTest.java
+ut01-equipo-04> java -cp target\classes ucu.edu.aed.Main
 ```
 
 Entre los casos probados se encuentran:
