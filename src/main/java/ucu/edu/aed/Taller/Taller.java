@@ -26,15 +26,76 @@ public class Taller {
     }
 
     // =========================================================
-    // GESTIÓN DE VEHÍCULOS
+    // INGRESO DE VEHÍCULOS
     // =========================================================
 
     /**
-     * Registra un vehículo y lo coloca al final de la cola
-     * de espera.
+     * Registra un vehículo que llega por un mantenimiento ya planificado.
+     * Como el trabajo a realizar ya se conoce, el mantenimiento se registra
+     * inmediatamente como una reparación pendiente.
      */
-    public void registrarVehiculo(Vehiculo vehiculo) {
+    public void registrarMantenimientoPlanificado(
+            Vehiculo vehiculo,
+            String descripcionMantenimiento) {
+
+        validarVehiculoParaIngreso(vehiculo);
+        validarDetalleIngreso(descripcionMantenimiento);
+
+        vehiculo.registrarIngreso(
+                TipoIngreso.MANTENIMIENTO_PLANIFICADO,
+                descripcionMantenimiento
+        );
+
+        vehiculo.agregarReparacion(
+                new Reparacion(
+                        descripcionMantenimiento.trim(),
+                        "Mantenimiento planificado"
+                )
+        );
+
         vehiculosEnEspera.poneEnCola(vehiculo);
+    }
+
+    /**
+     * Registra un vehículo que llega por un problema informado por el dueño.
+     * El problema se conserva como motivo de ingreso, pero no se crea una
+     * reparación todavía porque primero debe diagnosticarse la falla.
+     */
+    public void registrarProblemaInformado(
+            Vehiculo vehiculo,
+            String problemaInformado) {
+
+        validarVehiculoParaIngreso(vehiculo);
+        validarDetalleIngreso(problemaInformado);
+
+        vehiculo.registrarIngreso(
+                TipoIngreso.PROBLEMA_INFORMADO,
+                problemaInformado
+        );
+
+        vehiculosEnEspera.poneEnCola(vehiculo);
+    }
+
+    private void validarVehiculoParaIngreso(Vehiculo vehiculo) {
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
+
+        if (vehiculo.tieneIngresoRegistrado()) {
+            throw new IllegalStateException(
+                    "El vehículo ya fue registrado en el taller"
+            );
+        }
+    }
+
+    private void validarDetalleIngreso(String detalle) {
+        if (detalle == null || detalle.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "El motivo de ingreso no puede estar vacío"
+            );
+        }
     }
 
     /**
@@ -60,6 +121,12 @@ public class Taller {
      * Registra un nuevo tallerista.
      */
     public void registrarTallerista(Tallerista tallerista) {
+        if (tallerista == null) {
+            throw new IllegalArgumentException(
+                    "El tallerista no puede ser null"
+            );
+        }
+
         talleristas.agregar(tallerista);
     }
 
@@ -107,10 +174,18 @@ public class Taller {
      *
      * Las reparaciones se almacenan en una pila, por lo que
      * la última reparación agregada será la próxima en realizarse.
+     * Para un vehículo que ingresó por problema informado, la primera
+     * reparación agregada puede representar el resultado del diagnóstico.
      */
     public void agregarReparacion(
             Vehiculo vehiculo,
             Reparacion reparacion) {
+
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
 
         vehiculo.agregarReparacion(reparacion);
     }
@@ -119,6 +194,12 @@ public class Taller {
      * Retorna la próxima reparación pendiente del vehículo.
      */
     public Reparacion proximaReparacion(Vehiculo vehiculo) {
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
+
         return vehiculo.proximaReparacion();
     }
 
@@ -126,6 +207,12 @@ public class Taller {
      * Realiza la próxima reparación pendiente del vehículo.
      */
     public Reparacion realizarProximaReparacion(Vehiculo vehiculo) {
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
+
         return vehiculo.realizarProximaReparacion();
     }
 
@@ -138,11 +225,23 @@ public class Taller {
      */
     public void esperarRepuestos(Vehiculo vehiculo) {
 
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
+
+        if (!vehiculosEnTrabajo.contiene(vehiculo)) {
+            throw new IllegalStateException(
+                    "El vehículo no está siendo trabajado"
+            );
+        }
+
+        Tallerista tallerista = buscarTalleristaAsignado(vehiculo);
+
         vehiculosEnTrabajo.remover(vehiculo);
-
         esperandoRepuestos.poneEnCola(vehiculo);
-
-        liberarTallerista(vehiculo);
+        tallerista.liberarVehiculo();
     }
 
     /**
@@ -165,29 +264,26 @@ public class Taller {
      */
     public Vehiculo continuarConRepuestos() {
 
-    if (esperandoRepuestos.esVacio()) {
-        throw new NoSuchElementException(
-                "No hay vehículos esperando repuestos"
-        );
-    }
+        if (esperandoRepuestos.esVacio()) {
+            throw new NoSuchElementException(
+                    "No hay vehículos esperando repuestos"
+            );
+        }
 
-    Tallerista tallerista =
-            buscarTalleristaDisponible();
+        Tallerista tallerista = buscarTalleristaDisponible();
 
-    if (tallerista == null) {
-        throw new IllegalStateException(
-                "No hay talleristas disponibles"
-        );
-    }
+        if (tallerista == null) {
+            throw new IllegalStateException(
+                    "No hay talleristas disponibles"
+            );
+        }
 
-    Vehiculo vehiculo =
-            esperandoRepuestos.quitaDeCola();
+        Vehiculo vehiculo = esperandoRepuestos.quitaDeCola();
 
-    tallerista.asignarVehiculo(vehiculo);
+        tallerista.asignarVehiculo(vehiculo);
+        vehiculosEnTrabajo.agregar(vehiculo);
 
-    vehiculosEnTrabajo.agregar(vehiculo);
-
-    return vehiculo;
+        return vehiculo;
     }
 
     // =========================================================
@@ -199,27 +295,49 @@ public class Taller {
      */
     public void finalizarVehiculo(Vehiculo vehiculo) {
 
-    vehiculosEnTrabajo.remover(vehiculo);
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
 
-    liberarTallerista(vehiculo);
+        if (!vehiculosEnTrabajo.contiene(vehiculo)) {
+            throw new IllegalStateException(
+                    "El vehículo no está siendo trabajado"
+            );
+        }
 
-    vehiculosProntos.agregar(vehiculo);
+        if (vehiculo.tieneReparacionesPendientes()) {
+            throw new IllegalStateException(
+                    "El vehículo tiene reparaciones pendientes"
+            );
+        }
+
+        Tallerista tallerista = buscarTalleristaAsignado(vehiculo);
+
+        vehiculosEnTrabajo.remover(vehiculo);
+        tallerista.liberarVehiculo();
+        vehiculosProntos.agregar(vehiculo);
     }
 
     /**
-     * Libera al tallerista que estaba trabajando con el vehículo.
+     * Busca al tallerista que tiene asignado el vehículo. La búsqueda se
+     * realiza antes de modificar las estructuras para conservar el estado
+     * del sistema si la relación vehículo/tallerista no es válida.
      */
-    private void liberarTallerista(Vehiculo vehiculo) {
+    private Tallerista buscarTalleristaAsignado(Vehiculo vehiculo) {
 
-        for (int i = 0; i < talleristas.tamaño(); i++) {
+        Tallerista tallerista = talleristas.buscar(
+                t -> t.getVehiculoActual() == vehiculo
+        );
 
-            Tallerista tallerista = talleristas.obtener(i);
-
-            if (tallerista.getVehiculoActual() == vehiculo) {
-                tallerista.liberarVehiculo();
-                return;
-            }
+        if (tallerista == null) {
+            throw new IllegalStateException(
+                    "No hay un tallerista asignado a ese vehículo"
+            );
         }
+
+        return tallerista;
     }
 
     // =========================================================
@@ -233,18 +351,15 @@ public class Taller {
         return vehiculosEnTrabajo.tamaño();
     }
 
-    /**
-     * Retorna la cantidad de talleristas registrados.
-     */
     public int cantidadTalleristas() {
         return talleristas.tamaño();
     }
 
     public int cantidadVehiculosProntos() {
-    return vehiculosProntos.tamaño();
+        return vehiculosProntos.tamaño();
     }
 
     public boolean estaProntoParaRetirar(Vehiculo vehiculo) {
-    return vehiculosProntos.contiene(vehiculo);
+        return vehiculosProntos.contiene(vehiculo);
     }
 }

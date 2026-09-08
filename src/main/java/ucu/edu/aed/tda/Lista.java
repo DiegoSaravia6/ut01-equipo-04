@@ -175,11 +175,23 @@ public class Lista<T> implements TDALista<T> {
     public TDALista<T> ordenar(Comparator<T> comparator) {
         Lista<T> resultado = new Lista<>();
 
-        // Copiamos los elementos para no modificar la lista original.
+        // Copiamos en O(n) sin usar agregar(elem), porque agregar al final
+        // en esta implementación cuesta O(n). Un puntero local al último
+        // nodo de la copia permite enlazar cada nodo nuevo en O(1).
         Nodo actual = primero;
+        Lista<T>.Nodo ultimoCopia = null;
 
         while (actual != null) {
-            resultado.agregar(actual.dato);
+            Lista<T>.Nodo nuevo = resultado.new Nodo(actual.dato);
+
+            if (resultado.primero == null) {
+                resultado.primero = nuevo;
+            } else {
+                ultimoCopia.siguiente = nuevo;
+            }
+
+            ultimoCopia = nuevo;
+            resultado.tamaño++;
             actual = actual.siguiente;
         }
 

@@ -23,10 +23,28 @@ public class Tallerista {
     }
 
     public void asignarVehiculo(Vehiculo vehiculo) {
+        if (!estaDisponible()) {
+            throw new IllegalStateException(
+                    "El tallerista ya tiene un vehículo asignado"
+            );
+        }
+
+        if (vehiculo == null) {
+            throw new IllegalArgumentException(
+                    "El vehículo no puede ser null"
+            );
+        }
+
         this.vehiculoActual = vehiculo;
     }
 
     public void liberarVehiculo() {
+        if (estaDisponible()) {
+            throw new IllegalStateException(
+                    "El tallerista ya está disponible"
+            );
+        }
+
         this.vehiculoActual = null;
     }
 }

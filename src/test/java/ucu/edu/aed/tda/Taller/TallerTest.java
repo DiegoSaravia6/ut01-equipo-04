@@ -6,6 +6,7 @@ import ucu.edu.aed.Taller.Taller;
 import ucu.edu.aed.Taller.Vehiculo;
 import ucu.edu.aed.Taller.Tallerista;
 import ucu.edu.aed.Taller.Reparacion;
+import ucu.edu.aed.Taller.TipoIngreso;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -38,7 +39,7 @@ public class TallerTest extends TestCase {
     // REGISTRAR VEHÍCULOS
     // =========================================================
 
-    public void testRegistrarVehiculo() {
+    public void testRegistrarProblemaInformado() {
         Taller taller = new Taller();
 
         Vehiculo vehiculo = new Vehiculo(
@@ -48,10 +49,111 @@ public class TallerTest extends TestCase {
                 "Juan"
         );
 
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(
+                vehiculo,
+                "Ruido al doblar"
+        );
 
         assertEquals(1, taller.cantidadVehiculosEnEspera());
         assertSame(vehiculo, taller.proximoVehiculo());
+        assertEquals(
+                TipoIngreso.PROBLEMA_INFORMADO,
+                vehiculo.getTipoIngreso()
+        );
+        assertEquals("Ruido al doblar", vehiculo.getDetalleIngreso());
+        assertFalse(vehiculo.tieneReparacionesPendientes());
+    }
+
+    public void testRegistrarMantenimientoPlanificado() {
+        Taller taller = new Taller();
+
+        Vehiculo vehiculo = new Vehiculo(
+                "MNT123",
+                "Honda",
+                "Civic",
+                "Laura"
+        );
+
+        taller.registrarMantenimientoPlanificado(
+                vehiculo,
+                "Cambio de aceite y filtro"
+        );
+
+        assertEquals(1, taller.cantidadVehiculosEnEspera());
+        assertSame(vehiculo, taller.proximoVehiculo());
+        assertEquals(
+                TipoIngreso.MANTENIMIENTO_PLANIFICADO,
+                vehiculo.getTipoIngreso()
+        );
+        assertEquals(
+                "Cambio de aceite y filtro",
+                vehiculo.getDetalleIngreso()
+        );
+        assertTrue(vehiculo.tieneReparacionesPendientes());
+        assertEquals(
+                "Cambio de aceite y filtro",
+                taller.proximaReparacion(vehiculo).getDescripcion()
+        );
+    }
+
+    public void testProblemaInformadoRequiereDiagnosticoAntesDeCrearReparacion() {
+        Taller taller = new Taller();
+
+        Vehiculo vehiculo = new Vehiculo(
+                "PRB123",
+                "Ford",
+                "Focus",
+                "Pedro"
+        );
+
+        taller.registrarProblemaInformado(
+                vehiculo,
+                "Vibra al frenar"
+        );
+
+        assertEquals(
+                TipoIngreso.PROBLEMA_INFORMADO,
+                vehiculo.getTipoIngreso()
+        );
+        assertEquals("Vibra al frenar", vehiculo.getDetalleIngreso());
+        assertFalse(vehiculo.tieneReparacionesPendientes());
+
+        Reparacion diagnosticada = new Reparacion(
+                "Cambiar discos de freno",
+                "Falla diagnosticada"
+        );
+
+        taller.agregarReparacion(vehiculo, diagnosticada);
+
+        assertSame(diagnosticada, taller.proximaReparacion(vehiculo));
+    }
+
+    public void testNoSeRegistraDosVecesElMismoVehiculo() {
+        Taller taller = new Taller();
+
+        Vehiculo vehiculo = new Vehiculo(
+                "DUP123",
+                "Toyota",
+                "Corolla",
+                "Juan"
+        );
+
+        taller.registrarProblemaInformado(
+                vehiculo,
+                "Ruido en el motor"
+        );
+
+        try {
+            taller.registrarProblemaInformado(
+                    vehiculo,
+                    "Otro problema"
+            );
+            fail("Se esperaba IllegalStateException");
+        } catch (IllegalStateException e) {
+            // comportamiento esperado
+        }
+
+        assertEquals(1, taller.cantidadVehiculosEnEspera());
     }
 
     public void testVehiculosRespetanOrdenDeLlegada() {
@@ -78,9 +180,18 @@ public class TallerTest extends TestCase {
                 "Ana"
         );
 
-        taller.registrarVehiculo(primero);
-        taller.registrarVehiculo(segundo);
-        taller.registrarVehiculo(tercero);
+        taller.registrarMantenimientoPlanificado(
+                primero,
+                "Cambio de aceite"
+        );
+        taller.registrarProblemaInformado(
+                segundo,
+                "Ruido al frenar"
+        );
+        taller.registrarMantenimientoPlanificado(
+                tercero,
+                "Service de 20.000 km"
+        );
 
         assertSame(primero, taller.proximoVehiculo());
 
@@ -151,7 +262,7 @@ public class TallerTest extends TestCase {
         );
 
         taller.registrarTallerista(tallerista);
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(vehiculo, "Problema informado");
 
         Vehiculo atendido =
                 taller.atenderSiguiente();
@@ -183,7 +294,7 @@ public class TallerTest extends TestCase {
                 "Juan"
         );
 
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(vehiculo, "Problema informado");
 
         try {
             taller.atenderSiguiente();
@@ -324,7 +435,7 @@ public class TallerTest extends TestCase {
         );
 
         taller.registrarTallerista(tallerista);
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(vehiculo, "Problema informado");
 
         taller.atenderSiguiente();
 
@@ -364,7 +475,7 @@ public class TallerTest extends TestCase {
         );
 
         taller.registrarTallerista(tallerista);
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(vehiculo, "Problema informado");
 
         taller.atenderSiguiente();
         taller.esperarRepuestos(vehiculo);
@@ -388,6 +499,32 @@ public class TallerTest extends TestCase {
         );
     }
 
+    public void testNoPuedeEnviarARepuestosVehiculoFueraDeTrabajo() {
+        Taller taller = new Taller();
+
+        Vehiculo vehiculo = new Vehiculo(
+                "REP000",
+                "Toyota",
+                "Yaris",
+                "Lucia"
+        );
+
+        taller.registrarProblemaInformado(
+                vehiculo,
+                "No arranca"
+        );
+
+        try {
+            taller.esperarRepuestos(vehiculo);
+            fail("Se esperaba IllegalStateException");
+        } catch (IllegalStateException e) {
+            // comportamiento esperado
+        }
+
+        assertEquals(1, taller.cantidadVehiculosEnEspera());
+        assertEquals(0, taller.cantidadEsperandoRepuestos());
+    }
+
     // =========================================================
     // FINALIZACIÓN
     // =========================================================
@@ -406,7 +543,7 @@ public class TallerTest extends TestCase {
         );
 
         taller.registrarTallerista(tallerista);
-        taller.registrarVehiculo(vehiculo);
+        taller.registrarProblemaInformado(vehiculo, "Problema informado");
 
         taller.atenderSiguiente();
 
@@ -431,6 +568,36 @@ public class TallerTest extends TestCase {
         );
     }
 
+    public void testNoFinalizaConReparacionesPendientes() {
+        Taller taller = new Taller();
+        Tallerista tallerista = new Tallerista("Carlos");
+
+        Vehiculo vehiculo = new Vehiculo(
+                "PEN123",
+                "Honda",
+                "Civic",
+                "Laura"
+        );
+
+        taller.registrarTallerista(tallerista);
+        taller.registrarMantenimientoPlanificado(
+                vehiculo,
+                "Cambio de aceite"
+        );
+        taller.atenderSiguiente();
+
+        try {
+            taller.finalizarVehiculo(vehiculo);
+            fail("Se esperaba IllegalStateException");
+        } catch (IllegalStateException e) {
+            // comportamiento esperado
+        }
+
+        assertEquals(1, taller.cantidadVehiculosEnTrabajo());
+        assertEquals(0, taller.cantidadVehiculosProntos());
+        assertFalse(tallerista.estaDisponible());
+    }
+
     // =========================================================
     // FLUJO COMPLETO
     // =========================================================
@@ -451,8 +618,11 @@ public class TallerTest extends TestCase {
 
         taller.registrarTallerista(tallerista);
 
-        // 1. El vehículo llega.
-        taller.registrarVehiculo(vehiculo);
+        // 1. El vehículo llega por un problema informado por el dueño.
+        taller.registrarProblemaInformado(
+                vehiculo,
+                "Ruido al frenar"
+        );
 
         assertEquals(
                 1,
@@ -467,11 +637,11 @@ public class TallerTest extends TestCase {
                 tallerista.getVehiculoActual()
         );
 
-        // 3. Se registra la reparación original.
+        // 3. El diagnóstico identifica la reparación original.
         Reparacion original =
                 new Reparacion(
-                        "Cambio de aceite",
-                        "Mantenimiento"
+                        "Cambiar discos de freno",
+                        "Falla diagnosticada"
                 );
 
         taller.agregarReparacion(

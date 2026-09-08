@@ -10,6 +10,10 @@ public class Vehiculo {
     private String modelo;
     private String dueño;
 
+    // Se completa cuando el vehículo es aceptado por el taller.
+    private TipoIngreso tipoIngreso;
+    private String detalleIngreso;
+
     // Reparaciones que todavía deben realizarse.
     private Pila<Reparacion> reparacionesPendientes;
 
@@ -26,6 +30,9 @@ public class Vehiculo {
         this.marca = marca;
         this.modelo = modelo;
         this.dueño = dueño;
+
+        this.tipoIngreso = null;
+        this.detalleIngreso = null;
 
         reparacionesPendientes = new Pila<>();
         reparacionesRealizadas = new Lista<>();
@@ -47,11 +54,60 @@ public class Vehiculo {
         return dueño;
     }
 
+    public TipoIngreso getTipoIngreso() {
+        return tipoIngreso;
+    }
+
+    public String getDetalleIngreso() {
+        return detalleIngreso;
+    }
+
+    public boolean tieneIngresoRegistrado() {
+        return tipoIngreso != null;
+    }
+
+    /**
+     * Registra una sola vez el motivo por el que el vehículo ingresa.
+     * El método tiene visibilidad de paquete para que el ingreso sea
+     * coordinado por Taller y no desde cualquier parte de la aplicación.
+     */
+    void registrarIngreso(
+            TipoIngreso tipoIngreso,
+            String detalleIngreso) {
+
+        if (tipoIngreso == null) {
+            throw new IllegalArgumentException(
+                    "El tipo de ingreso no puede ser null"
+            );
+        }
+
+        if (detalleIngreso == null || detalleIngreso.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "El detalle de ingreso no puede estar vacío"
+            );
+        }
+
+        if (tieneIngresoRegistrado()) {
+            throw new IllegalStateException(
+                    "El vehículo ya fue registrado en el taller"
+            );
+        }
+
+        this.tipoIngreso = tipoIngreso;
+        this.detalleIngreso = detalleIngreso.trim();
+    }
+
     // =========================================================
     // REPARACIONES PENDIENTES
     // =========================================================
 
     public void agregarReparacion(Reparacion reparacion) {
+        if (reparacion == null) {
+            throw new IllegalArgumentException(
+                    "La reparación no puede ser null"
+            );
+        }
+
         reparacionesPendientes.mete(reparacion);
     }
 

@@ -8,7 +8,7 @@ El proyecto contiene las estructuras lineales desarrolladas para el Desafío 1 y
 
 ## 1. Estructuras de datos
 
-Para el Desafío 1 se implementaron diferentes estructuras lineales utilizando nodos enlazados.
+Para el Desafío 1 se implementaron diferentes estructuras lineales utilizando la representación correspondiente en cada caso: un arreglo dinámico propio para `ListaArreglo` y nodos enlazados para las listas, pilas y colas enlazadas.
 
 Las principales estructuras desarrolladas son:
 
@@ -39,6 +39,13 @@ La idea es que las estructuras sean reutilizables desde otras partes del proyect
 ## Escenario
 
 El sistema representa un taller mecánico que recibe vehículos para realizar mantenimientos o reparaciones.
+
+El ingreso tiene **dos caminos distintos**, tal como plantea el escenario:
+
+1. **Mantenimiento planificado**: el trabajo ya es conocido cuando el vehículo llega, por lo que se registra inmediatamente como una reparación pendiente.
+2. **Problema informado por el dueño**: se conserva la descripción del problema, pero no se inventa una reparación al ingreso. La reparación correspondiente se agrega después de diagnosticar la falla.
+
+Ambos caminos terminan en la misma `Cola<Vehiculo>` de espera, por lo que el orden de atención continúa siendo FIFO independientemente del motivo de ingreso.
 
 Un vehículo puede:
 
@@ -170,6 +177,10 @@ En nuestra implementación de `Lista`, los elementos están almacenados mediante
 
 `agregar(elemento)` es O(n) porque la implementación recorre la lista hasta encontrar el último nodo antes de insertar el nuevo elemento.
 
+### Ordenamiento de `Lista`
+
+`ordenar(Comparator)` utiliza **Merge Sort**. La copia previa de los nodos se construye en O(n) mediante un puntero local al último nodo de la copia, sin llamar repetidamente a `agregar(elemento)`. Luego Merge Sort divide recursivamente y mezcla los nodos en O(n log n). Por lo tanto, el método completo `ordenar()` queda en **O(n log n)** y no modifica la lista original.
+
 ---
 
 # 4. Modelo de clases
@@ -211,6 +222,13 @@ Contiene información básica para identificarlo:
 * marca;
 * modelo;
 * dueño.
+
+También conserva la información de ingreso:
+
+* `TipoIngreso tipoIngreso`, con los valores `MANTENIMIENTO_PLANIFICADO` o `PROBLEMA_INFORMADO`;
+* `String detalleIngreso`, que guarda el mantenimiento acordado o el problema descrito por el dueño.
+
+El motivo se registra una sola vez cuando el vehículo es aceptado por `Taller`, evitando que el mismo objeto sea ingresado dos veces.
 
 Además mantiene:
 
@@ -255,7 +273,26 @@ Cuando se asigna un vehículo, pasa a estar ocupado. Cuando el vehículo deja de
 
 # 5. Flujo principal del sistema
 
-El flujo de un vehículo puede representarse de la siguiente manera:
+Antes de entrar a la cola de espera se distingue el motivo de ingreso:
+
+```text
+                         Llega el vehículo
+                               |
+                  +------------+------------+
+                  |                         |
+       Mantenimiento planificado     Problema informado
+                  |                         |
+     Trabajo conocido: se agrega       Se conserva el síntoma;
+     a la Pila de pendientes           primero se diagnostica
+                  |                         |
+                  +------------+------------+
+                               |
+                         Cola de espera
+                               |
+                         Atención FIFO
+```
+
+Después de ese ingreso, el flujo general es:
 
 ```text
                   ┌─────────────────────┐
@@ -302,13 +339,29 @@ El flujo de un vehículo puede representarse de la siguiente manera:
 
 El sistema implementa, entre otras, las siguientes operaciones.
 
-### Registrar vehículo
+### Registrar vehículo por mantenimiento planificado
 
 ```java
-registrarVehiculo(Vehiculo vehiculo)
+registrarMantenimientoPlanificado(
+    Vehiculo vehiculo,
+    String descripcionMantenimiento
+)
 ```
 
-Agrega el vehículo al final de la cola de espera.
+Registra el tipo de ingreso, crea el mantenimiento como reparación pendiente y agrega el vehículo al final de la cola de espera. Tanto `Pila.mete()` como `Cola.poneEnCola()` son O(1).
+
+Complejidad: **O(1)**.
+
+### Registrar vehículo por problema informado
+
+```java
+registrarProblemaInformado(
+    Vehiculo vehiculo,
+    String problemaInformado
+)
+```
+
+Conserva el problema descrito por el dueño y agrega el vehículo a la cola sin crear una reparación ficticia. Una vez diagnosticada la falla, se utiliza `agregarReparacion(...)` para registrar el trabajo necesario.
 
 Complejidad: **O(1)**.
 
@@ -426,28 +479,19 @@ Complejidad: **O(n)**.
 
 ---
 
-# 7. Consultas implementadas
+# 7. Consultas implementadas y justificación
 
-El sistema permite consultar información útil del taller, entre ella:
+La consigna exige al menos cinco operaciones/consultas relevantes que hagan uso real de las estructuras desarrolladas. Las cinco consultas principales elegidas son:
 
-```java
-cantidadVehiculosEnEspera()
-cantidadVehiculosEnTrabajo()
-cantidadEsperandoRepuestos()
-cantidadTalleristas()
-cantidadVehiculosProntos()
-estaProntoParaRetirar(Vehiculo vehiculo)
-```
+| Consulta | Estructura utilizada | Por qué es útil | Complejidad |
+| --- | --- | --- | --- |
+| `proximoVehiculo()` | `Cola<Vehiculo>` | Permite saber qué vehículo corresponde atender sin alterar el orden de llegada. | O(1) |
+| `buscarTalleristaDisponible()` | `Lista<Tallerista>` | Permite asignar trabajo al primer tallerista libre recorriendo la estructura. | O(t), donde t es la cantidad de talleristas |
+| `proximoEsperandoRepuestos()` | `Cola<Vehiculo>` | Permite saber qué vehículo debe retomar el trabajo primero cuando llegan repuestos. | O(1) |
+| `proximaReparacion(Vehiculo)` | `Pila<Reparacion>` | Determina el próximo trabajo respetando LIFO, de modo que una falla adicional quede por encima del problema original. | O(1) |
+| `estaProntoParaRetirar(Vehiculo)` | `Lista<Vehiculo>` | Verifica si el vehículo ya está dentro del conjunto operativo de vehículos finalizados. | O(p), donde p es la cantidad de vehículos prontos |
 
-Además se pueden consultar:
-
-* el próximo vehículo a atender;
-* el próximo vehículo esperando repuestos;
-* la próxima reparación pendiente;
-* el historial de reparaciones realizadas;
-* el tallerista disponible para recibir un vehículo.
-
-Estas consultas no se limitan solamente a mostrar atributos almacenados, sino que utilizan las estructuras implementadas para obtener la información requerida.
+Además existen consultas auxiliares de cantidad (`cantidadVehiculosEnEspera`, `cantidadVehiculosEnTrabajo`, `cantidadEsperandoRepuestos`, `cantidadTalleristas` y `cantidadVehiculosProntos`) y consultas del historial de reparaciones. Estas se mantienen como apoyo al funcionamiento y a la demostración, pero no son las cinco consultas principales utilizadas para justificar el requerimiento.
 
 ---
 
@@ -456,14 +500,17 @@ Estas consultas no se limitan solamente a mostrar atributos almacenados, sino qu
 El sistema cuenta con pruebas específicas para el funcionamiento del taller en:
 
 ```text
-\ut01-equipo-04> java -cp target\classes ucu.edu.aed.Main
+src/test/java/ucu/edu/aed/tda/Taller/TallerTest.java
 ```
 
 Entre los casos probados se encuentran:
 
 * creación de un taller vacío;
-* registro de vehículos;
-* respeto del orden de llegada;
+* registro de vehículos por **mantenimiento planificado**;
+* registro de vehículos por **problema informado por el dueño**;
+* comprobación de que un problema informado no crea una reparación antes del diagnóstico;
+* rechazo del segundo ingreso del mismo vehículo;
+* respeto del orden de llegada incluso mezclando ambos tipos de ingreso;
 * consulta del próximo vehículo;
 * registro de talleristas;
 * búsqueda de talleristas disponibles;
@@ -475,6 +522,8 @@ Entre los casos probados se encuentran:
 * espera por repuestos;
 * continuación del trabajo después de recibir repuestos;
 * finalización de vehículos;
+* rechazo de la finalización mientras existan reparaciones pendientes;
+* rechazo de enviar a repuestos un vehículo que no está en trabajo;
 * liberación de talleristas;
 * flujo completo de un vehículo.
 
@@ -486,11 +535,7 @@ Para ejecutarlas:
 mvn clean test
 ```
 
-El estado actual del proyecto fue verificado con:
-
-```text
-BUILD SUCCESS
-```
+Durante la revisión se recompilaron las clases principales y se ejecutaron las pruebas del paquete de estructuras y del taller sin fallos. El comando estándar para repetir la validación en el entorno Maven del equipo es `mvn clean test`.
 
 ---
 
@@ -507,18 +552,19 @@ Esta clase realiza una demostración del flujo del sistema.
 La demostración incluye:
 
 1. Registro de talleristas.
-2. Registro de vehículos.
-3. Atención de vehículos respetando el orden de llegada.
-4. Registro de una reparación original.
-5. Registro de una falla adicional.
-6. Ejecución de la falla adicional antes de la original.
-7. Registro del historial de reparaciones.
-8. Envío de un vehículo a espera de repuestos.
-9. Liberación del tallerista.
-10. Llegada de los repuestos.
-11. Continuación del trabajo.
-12. Finalización del vehículo.
-13. Consulta del estado final del taller.
+2. Registro de vehículos eligiendo entre mantenimiento planificado y problema informado.
+3. Conservación del motivo de ingreso.
+4. Atención de vehículos respetando el orden de llegada.
+5. Registro de la reparación diagnosticada o uso del mantenimiento ya planificado.
+6. Registro de una falla adicional.
+7. Ejecución de la falla adicional antes de la original.
+8. Registro del historial de reparaciones.
+9. Envío de un vehículo a espera de repuestos.
+10. Liberación del tallerista.
+11. Llegada de los repuestos.
+12. Continuación del trabajo.
+13. Finalización del vehículo.
+14. Consulta del estado final del taller.
 
 Para compilar:
 
@@ -534,7 +580,56 @@ java -cp target\classes ucu.edu.aed.Main
 
 ---
 
-# 10. Organización del proyecto
+# 10. Desafío 3 — Optimización
+
+## Operación identificada
+
+La operación elegida fue `Lista.agregar(elemento)`. La lista simplemente enlazada original conserva únicamente `primero`; por eso, para insertar al final debe recorrer todos los nodos existentes. Una inserción al final cuesta **O(n)** y construir una lista de n elementos mediante n inserciones sucesivas cuesta **O(n²)**.
+
+## Alternativa propuesta
+
+Se implementó una clase separada `ListaOptimizada<T>` que conserva:
+
+```text
+primero
+ultimo
+tamaño
+```
+
+Al mantener `ultimo`, `agregar(elemento)` enlaza el nuevo nodo directamente al final y actualiza la referencia, por lo que la inserción pasa a **O(1)**. Construir n elementos pasa a **O(n)**. La optimización de esta operación se mantiene en `ListaOptimizada`, una clase separada, para poder comparar claramente ambas representaciones.
+
+## Comparación experimental
+
+`BenchmarkLista` ejecuta inserciones sucesivas en ambas implementaciones, realiza un calentamiento previo de la JVM y promedia diez repeticiones. En una ejecución registrada por el equipo se obtuvieron los siguientes valores:
+
+| Elementos | `Lista` promedio (µs) | `ListaOptimizada` promedio (µs) | Mejora aproximada |
+| ---: | ---: | ---: | ---: |
+| 1.000 | 1.506,40 | 39,90 | 37,7x |
+| 5.000 | 64.972,30 | 203,70 | 318,9x |
+| 10.000 | 206.185,10 | 804,10 | 256,3x |
+| 25.000 | 1.753.136,50 | 1.556,70 | 1.126x |
+| 50.000 | 6.626.318,30 | 317,70 | 20.857x |
+| 100.000 | 30.216.326,20 | 28.410,60 | 1.063,5x |
+
+Los tiempos concretos pueden variar por JIT, garbage collection y carga del equipo; por eso la conclusión principal no depende de un cociente puntual sino del crecimiento observado y del análisis asintótico: **O(n²) frente a O(n)** para construir la lista mediante inserciones al final.
+
+---
+
+# 11. Registro del uso de herramientas de IA
+
+Se utilizaron herramientas de IA generativa como apoyo durante el desarrollo para:
+
+* revisar implementaciones y detectar casos borde;
+* discutir decisiones de representación y complejidad;
+* proponer y revisar casos de prueba;
+* detectar requisitos del escenario que no estaban representados explícitamente;
+* mejorar documentación y preparación para la defensa.
+
+El código y las decisiones finales fueron revisados por el equipo. El uso de IA se tomó como apoyo al proceso de desarrollo y no como sustituto de la comprensión de las estructuras, sus invariantes, sus costos y las modificaciones realizadas.
+
+---
+
+# 12. Organización del proyecto
 
 La estructura principal es:
 
@@ -549,6 +644,7 @@ src/
 │                   │   ├── Reparacion.java
 │                   │   ├── Taller.java
 │                   │   ├── Tallerista.java
+│                   │   ├── TipoIngreso.java
 │                   │   └── Vehiculo.java
 │                   │
 │                   ├── tda/
@@ -561,6 +657,7 @@ src/
 │                   │   ├── ListaCircular.java
 │                   │   ├── ListaCircularDoble.java
 │                   │   ├── ListaDoble.java
+│                   │   ├── ListaOptimizada.java
 │                   │   ├── Pila.java
 │                   │   ├── PilaPrioridad.java
 │                   │   ├── TDACola.java
@@ -583,11 +680,12 @@ src/
 
 ---
 
-# 11. Resumen de decisiones
+# 13. Resumen de decisiones
 
-| Necesidad                     | Estructura          | Motivo                                                  |
-| ----------------------------- | ------------------- | ------------------------------------------------------- |
-| Vehículos esperando atención  | `Cola<Vehiculo>`    | Respeta el orden de llegada                             |
+| Necesidad                     | Estructura / representación | Motivo                                             |
+| ----------------------------- | -------------------------- | -------------------------------------------------- |
+| Motivo de ingreso             | `TipoIngreso` + detalle    | Distingue mantenimiento planificado de problema informado |
+| Vehículos esperando atención  | `Cola<Vehiculo>`           | Respeta el orden de llegada                        |
 | Vehículos esperando repuestos | `Cola<Vehiculo>`    | Mantiene el orden de espera                             |
 | Reparaciones pendientes       | `Pila<Reparacion>`  | Las fallas nuevas deben atenderse primero               |
 | Historial de reparaciones     | `Lista<Reparacion>` | Permite conservar y consultar los trabajos realizados   |

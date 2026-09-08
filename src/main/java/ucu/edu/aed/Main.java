@@ -111,7 +111,7 @@ public class Main {
         System.out.println("              MENU");
         System.out.println("--------------------------------------");
         System.out.println("1. Registrar tallerista");
-        System.out.println("2. Registrar vehiculo");
+        System.out.println("2. Registrar vehiculo (mantenimiento o problema)");
         System.out.println("3. Atender siguiente vehiculo");
         System.out.println("4. Agregar reparacion");
         System.out.println("5. Realizar proxima reparacion");
@@ -156,12 +156,48 @@ public class Main {
                 dueño
         );
 
-        taller.registrarVehiculo(vehiculo);
+        System.out.println();
+        System.out.println("Motivo de ingreso:");
+        System.out.println("1. Mantenimiento planificado");
+        System.out.println("2. Problema informado por el dueño");
+
+        int tipoIngreso = leerEntero("Seleccione el motivo: ");
+
+        if (tipoIngreso == 1) {
+            String mantenimiento = leerTexto(
+                    "Mantenimiento a realizar: "
+            );
+
+            taller.registrarMantenimientoPlanificado(
+                    vehiculo,
+                    mantenimiento
+            );
+
+        } else if (tipoIngreso == 2) {
+            String problema = leerTexto(
+                    "Problema informado por el dueño: "
+            );
+
+            taller.registrarProblemaInformado(
+                    vehiculo,
+                    problema
+            );
+
+        } else {
+            throw new IllegalArgumentException(
+                    "El motivo de ingreso debe ser 1 o 2."
+            );
+        }
+
         vehiculosRegistrados.agregar(vehiculo);
 
         System.out.println();
         System.out.println("Vehiculo registrado correctamente.");
         System.out.println("Patente: " + patente);
+        System.out.println("Tipo de ingreso: "
+                + vehiculo.getTipoIngreso());
+        System.out.println("Detalle: "
+                + vehiculo.getDetalleIngreso());
         System.out.println("Vehiculos esperando: "
                 + taller.cantidadVehiculosEnEspera());
     }
@@ -350,23 +386,17 @@ public class Main {
         String patente =
                 leerTexto("Ingrese la patente del vehiculo: ");
 
-        for (int i = 0;
-             i < vehiculosRegistrados.tamaño();
-             i++) {
-
-            Vehiculo vehiculo =
-                    vehiculosRegistrados.obtener(i);
-
-            if (vehiculo.getPatente().equalsIgnoreCase(patente)) {
-                return vehiculo;
-            }
-        }
-
-        System.out.println(
-                "No se encontro un vehiculo con esa patente."
+        Vehiculo vehiculo = vehiculosRegistrados.buscar(
+                v -> v.getPatente().equalsIgnoreCase(patente)
         );
 
-        return null;
+        if (vehiculo == null) {
+            System.out.println(
+                    "No se encontro un vehiculo con esa patente."
+            );
+        }
+
+        return vehiculo;
     }
 
     private static String leerTexto(String mensaje) {
