@@ -30,11 +30,7 @@ public class OrdenTrabajo {
         this.fechaIngreso = fechaIngreso;
 
         this.trabajos = new ArbolGeneral<>(
-                new Reparacion(
-                        "RAIZ_ORDEN_" + id,
-                        "ORDEN",
-                        0.0
-                )
+                new Reparacion("RAIZ_ORDEN_" + id,"ORDEN",0.0)
         );
     }
 
@@ -87,21 +83,14 @@ public class OrdenTrabajo {
 
         validarTrabajo(descripcion, parte, costo);
 
-        Reparacion origen =
-                buscarTrabajoPorId(idTrabajoOrigen);
+        Reparacion origen =buscarTrabajoPorId(idTrabajoOrigen);
 
         if (origen == null) {
             throw new IllegalArgumentException(
-                    "No existe el trabajo de origen con id "
-                            + idTrabajoOrigen);
+                    "No existe el trabajo de origen con id "+ idTrabajoOrigen);
         }
 
-        Reparacion nueva =
-                new Reparacion(
-                        descripcion.trim(),
-                        parte.getCodigo(),
-                        costo
-                );
+        Reparacion nueva =new Reparacion(descripcion.trim(),parte.getCodigo(),costo);
 
         nueva.setAprobado(false);
 

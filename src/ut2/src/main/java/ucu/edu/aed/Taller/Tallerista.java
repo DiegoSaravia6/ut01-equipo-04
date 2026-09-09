@@ -2,12 +2,19 @@ package ucu.edu.aed.Taller;
 
 public class Tallerista {
 
+    private final int id;
     private String nombre;
     private Vehiculo vehiculoActual;
+    
 
-    public Tallerista(String nombre) {
+    public Tallerista(int id,String nombre) {
         this.nombre = nombre;
         this.vehiculoActual = null;
+        this.id = id;
+    }
+
+    public int getId(){
+        return id;
     }
 
     public String getNombre() {
@@ -46,5 +53,22 @@ public class Tallerista {
         }
 
         this.vehiculoActual = null;
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tallerista that = (Tallerista) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return "Tallerista{id=" + id + ", nombre='" + nombre + "'}";
     }
 }
