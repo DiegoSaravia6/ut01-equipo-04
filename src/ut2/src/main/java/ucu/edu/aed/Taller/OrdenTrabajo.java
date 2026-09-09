@@ -173,6 +173,10 @@ public class OrdenTrabajo {
 
         Reparacion trabajo =
                 obtenerTrabajo(idTrabajo);
+                if (trabajo.getEstado() ==EstadoReparacion.En_Proceso|| trabajo.getEstado() ==EstadoReparacion.Terminado|| trabajo.getEstado() ==EstadoReparacion.Rechazada) {
+            throw new IllegalStateException(
+                    "No se puede rechazar un trabajo que ya está en progreso, terminado o rechazado");
+                }
 
         ElementoArbolGeneral<Reparacion> nodo =
                 trabajos.buscarNodo(r -> r == trabajo);
