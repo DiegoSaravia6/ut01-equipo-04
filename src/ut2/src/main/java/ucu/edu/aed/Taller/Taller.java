@@ -100,8 +100,7 @@ public class Taller {
 
         vehiculo.registrarIngreso(TipoIngreso.MANTENIMIENTO_PLANIFICADO, descripcionMantenimiento);
         if (compatibilidadHito1) {
-            vehiculo.agregarReparacion(new Reparacion(
-                    descripcionMantenimiento.trim(), "Mantenimiento planificado"));
+            vehiculo.agregarReparacion(new Reparacion(descripcionMantenimiento.trim(), "Mantenimiento planificado"));
         }
 
         OrdenTrabajo orden = crearOrden(vehiculo, fechaIngreso);
@@ -274,7 +273,7 @@ public class Taller {
     // TRABAJOS RAMIFICADOS DEL HITO 2
     // =========================================================
 
-    public Trabajo registrarTrabajoPrincipal(
+    public Reparacion registrarTrabajoPrincipal(
             Vehiculo vehiculo, String descripcion, String codigoParte,
             double costo, boolean aprobado) {
         OrdenTrabajo orden = ordenDe(vehiculo);
@@ -282,7 +281,7 @@ public class Taller {
         return orden.agregarTrabajoPrincipal(descripcion, parte, costo, aprobado);
     }
 
-    public Trabajo registrarTrabajoDerivado(
+    public Reparacion registrarTrabajoDerivado(
             Vehiculo vehiculo, int idTrabajoOrigen, String descripcion,
             String codigoParte, double costo) {
         OrdenTrabajo orden = ordenDe(vehiculo);
@@ -315,7 +314,7 @@ public class Taller {
             throw new IllegalStateException("El vehículo no está siendo trabajado");
         }
         OrdenTrabajo orden = ordenDe(vehiculo);
-        orden.suspenderPorRepuesto(idTrabajo);
+        orden.suspenderTrabajoPorRepuesto(idTrabajo);
 
         if (!orden.tieneTrabajoEjecutable()) {
             Tallerista tallerista = buscarTalleristaAsignado(vehiculo);
@@ -326,14 +325,14 @@ public class Taller {
     }
 
     public void reanudarTrabajoPorRepuesto(Vehiculo vehiculo, int idTrabajo) {
-        ordenDe(vehiculo).reanudarPorRepuesto(idTrabajo);
+        ordenDe(vehiculo).reanudarTrabajoPorRepuesto(idTrabajo);
     }
 
-    public ListaArreglo<Trabajo> consultarOrdenPendiente(Vehiculo vehiculo) {
+    public ListaArreglo<Reparacion> consultarOrdenPendiente(Vehiculo vehiculo) {
         return ordenDe(vehiculo).ordenPendiente();
     }
 
-    public ListaArreglo<Trabajo> consultarTrabajosBloqueados(Vehiculo vehiculo, int idTrabajo) {
+    public ListaArreglo<Reparacion> consultarTrabajosBloqueados(Vehiculo vehiculo, int idTrabajo) {
         return ordenDe(vehiculo).trabajosBloqueadosPor(idTrabajo);
     }
 
@@ -421,4 +420,16 @@ public class Taller {
     public int cantidadTalleristas() { return talleristas.tamaño(); }
     public int cantidadVehiculosProntos() { return vehiculosProntos.tamaño(); }
     public boolean estaProntoParaRetirar(Vehiculo vehiculo) { return vehiculosProntos.contiene(vehiculo); }
+    public boolean tieneTrabajoEjecutable() {
+    final boolean[] existe = {false};
+
+    trabajos.preOrder(r -> {
+        if (r.isAprobado()
+                && r.getEstado() == EstadoReparacion.Pendiente) {
+            existe[0] = true;
+        }
+    });
+
+    return existe[0];
+}
 }

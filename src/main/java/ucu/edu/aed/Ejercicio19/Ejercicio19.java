@@ -1,4 +1,4 @@
-package ucu.edu.aed.ProblemSet01.Ejercicio19;
+package ucu.edu.aed.Ejercicio19;
 
 public class Ejercicio19 
 {

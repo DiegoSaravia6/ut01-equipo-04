@@ -1,4 +1,4 @@
-package ucu.edu.aed.ProblemSet01.Ejercicio27;
+package ucu.edu.aed.Ejercicio27;
 
 import ucu.edu.aed.tda.ListaCircular;
 
