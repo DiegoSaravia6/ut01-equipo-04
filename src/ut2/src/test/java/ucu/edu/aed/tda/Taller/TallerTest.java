@@ -7,6 +7,7 @@ import ucu.edu.aed.Taller.Vehiculo;
 import ucu.edu.aed.Taller.Tallerista;
 import ucu.edu.aed.Taller.Reparacion;
 import ucu.edu.aed.Taller.TipoIngreso;
+import ucu.edu.aed.Taller.Trabajo;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -19,6 +20,12 @@ public class TallerTest extends TestCase {
 
     public static Test suite() {
         return new TestSuite(TallerTest.class);
+    }
+
+    private void completarDiagnostico(Taller taller, Vehiculo vehiculo) {
+        Trabajo diagnostico = vehiculo.getOrdenActual().getDiagnosticoInicial();
+        taller.iniciarTrabajo(vehiculo, diagnostico.getId());
+        taller.finalizarTrabajo(vehiculo, diagnostico.getId());
     }
 
     // =========================================================
@@ -196,7 +203,7 @@ public class TallerTest extends TestCase {
         assertSame(primero, taller.proximoVehiculo());
 
         taller.registrarTallerista(
-                new Tallerista("Carlos")
+                new Tallerista(1, "Carlos")
         );
 
         assertSame(primero, taller.atenderSiguiente());
@@ -222,7 +229,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(2, "Carlos");
 
         taller.registrarTallerista(tallerista);
 
@@ -234,10 +241,10 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista primero =
-                new Tallerista("Carlos");
+                new Tallerista(3, "Carlos");
 
         Tallerista segundo =
-                new Tallerista("Pedro");
+                new Tallerista(4, "Pedro");
 
         taller.registrarTallerista(primero);
         taller.registrarTallerista(segundo);
@@ -252,7 +259,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(5, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "ABC123",
@@ -425,7 +432,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(6, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "ABC123",
@@ -465,7 +472,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(7, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "ABC123",
@@ -533,7 +540,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(8, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "ABC123",
@@ -547,6 +554,8 @@ public class TallerTest extends TestCase {
 
         taller.atenderSiguiente();
 
+        // En Hito 2, un problema informado crea un diagnóstico obligatorio.
+        completarDiagnostico(taller, vehiculo);
         taller.finalizarVehiculo(vehiculo);
 
         assertEquals(
@@ -570,7 +579,7 @@ public class TallerTest extends TestCase {
 
     public void testNoFinalizaConReparacionesPendientes() {
         Taller taller = new Taller();
-        Tallerista tallerista = new Tallerista("Carlos");
+        Tallerista tallerista = new Tallerista(9, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "PEN123",
@@ -607,7 +616,7 @@ public class TallerTest extends TestCase {
         Taller taller = new Taller();
 
         Tallerista tallerista =
-                new Tallerista("Carlos");
+                new Tallerista(10, "Carlos");
 
         Vehiculo vehiculo = new Vehiculo(
                 "ABC123",
@@ -637,7 +646,10 @@ public class TallerTest extends TestCase {
                 tallerista.getVehiculoActual()
         );
 
-        // 3. El diagnóstico identifica la reparación original.
+        // 3. En Hito 2 el diagnóstico es un trabajo explícito y debe completarse.
+        completarDiagnostico(taller, vehiculo);
+
+        // 4. El diagnóstico identifica la reparación original.
         Reparacion original =
                 new Reparacion(
                         "Cambiar discos de freno",
@@ -649,7 +661,7 @@ public class TallerTest extends TestCase {
                 original
         );
 
-        // 4. Durante el diagnóstico aparece una
+        // 5. Durante la reparación aparece una
         //    falla adicional.
         Reparacion adicional =
                 new Reparacion(
@@ -662,25 +674,25 @@ public class TallerTest extends TestCase {
                 adicional
         );
 
-        // 5. La falla adicional se atiende primero.
+        // 6. La falla adicional se atiende primero.
         assertSame(
                 adicional,
                 taller.realizarProximaReparacion(vehiculo)
         );
 
-        // 6. Luego se atiende la reparación original.
+        // 7. Luego se atiende la reparación original.
         assertSame(
                 original,
                 taller.realizarProximaReparacion(vehiculo)
         );
 
-        // 7. Ambas quedan registradas.
+        // 8. Ambas quedan registradas.
         assertEquals(
                 2,
                 vehiculo.cantidadReparacionesRealizadas()
         );
 
-        // 8. El vehículo queda pronto.
+        // 9. El vehículo queda pronto.
         taller.finalizarVehiculo(vehiculo);
 
         assertTrue(
@@ -692,7 +704,7 @@ public class TallerTest extends TestCase {
                 taller.cantidadVehiculosProntos()
         );
 
-        // 9. El tallerista queda libre.
+        // 10. El tallerista queda libre.
         assertTrue(
                 tallerista.estaDisponible()
         );

@@ -5,13 +5,14 @@ import java.time.LocalDate;
 import ucu.edu.aed.tda.ArbolGeneral;
 import ucu.edu.aed.tda.Lista;
 import ucu.edu.aed.tda.ListaArreglo;
+import ucu.edu.aed.tda.IndexableMonticulo;
 import ucu.edu.aed.tda.Pila;
 
 /**
  * Vehículo del taller. Conserva las operaciones del Hito 1 y agrega la
  * estructura jerárquica de partes, órdenes y datos de prioridad del Hito 2.
  */
-public class Vehiculo implements Comparable<Vehiculo> {
+public class Vehiculo implements Comparable<Vehiculo>, IndexableMonticulo {
 
     private String patente;
     private String marca;
@@ -34,6 +35,7 @@ public class Vehiculo implements Comparable<Vehiculo> {
     // Hito 2: prioridad de atención.
     private LocalDate fechaEntregaComprometida;
     private long ordenLlegada;
+    private int indiceMonticulo = -1;
 
     public Vehiculo(String patente, String marca, String modelo, String dueño) {
         if (patente == null || patente.trim().isEmpty()) {
@@ -63,6 +65,8 @@ public class Vehiculo implements Comparable<Vehiculo> {
     public String getDetalleIngreso() { return detalleIngreso; }
     public LocalDate getFechaEntregaComprometida() { return fechaEntregaComprometida; }
     public long getOrdenLlegada() { return ordenLlegada; }
+    @Override public int getIndiceMonticulo() { return indiceMonticulo; }
+    @Override public void setIndiceMonticulo(int indice) { this.indiceMonticulo = indice; }
 
     public boolean tieneIngresoRegistrado() { return tipoIngreso != null; }
 

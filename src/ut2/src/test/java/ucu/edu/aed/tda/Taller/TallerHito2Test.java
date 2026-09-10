@@ -3,12 +3,12 @@ package ucu.edu.aed.tda.Taller;
 import java.time.LocalDate;
 
 import junit.framework.TestCase;
+import ucu.edu.aed.Taller.EstadoAprobacion;
+import ucu.edu.aed.Taller.EstadoTrabajo;
 import ucu.edu.aed.Taller.OrdenTrabajo;
 import ucu.edu.aed.Taller.Taller;
 import ucu.edu.aed.Taller.Tallerista;
 import ucu.edu.aed.Taller.Trabajo;
-import ucu.edu.aed.Taller.EstadoTrabajo;
-import ucu.edu.aed.Taller.EstadoAprobacion;
 import ucu.edu.aed.Taller.Vehiculo;
 import ucu.edu.aed.tda.ListaArreglo;
 
@@ -27,11 +27,71 @@ public class TallerHito2Test extends TestCase {
         v.agregarParte("TREN", "FRENOS", "Frenos delanteros");
     }
 
+    /**
+     * Varios tests prueban otras reglas del Hito 2. Para que el diagnóstico
+     * automático no interfiera, lo completamos primero de forma explícita.
+     */
+    private void completarDiagnostico(Taller taller, Vehiculo v) {
+        Trabajo diagnostico = v.getOrdenActual().getDiagnosticoInicial();
+        taller.iniciarTrabajo(v, diagnostico.getId());
+        taller.finalizarTrabajo(v, diagnostico.getId());
+    }
+
     public void testEstructuraVehiculoPuedeTenerProfundidadVariable() {
         Vehiculo v = vehiculo("ARB001");
         prepararEstructura(v);
         assertEquals("Tensor", v.buscarParte("TENSOR").getNombre());
         assertEquals(4, v.getEstructuraPartes().altura());
+    }
+
+    public void testProblemaInformadoCreaDiagnosticoAutomatico() {
+        Taller taller = new Taller();
+        Vehiculo v = vehiculo("DIA001");
+
+        OrdenTrabajo orden = taller.registrarProblemaInformado(
+                v, "Vibra al frenar", LocalDate.of(2026, 9, 1), null);
+
+        Trabajo diagnostico = orden.getDiagnosticoInicial();
+        assertNotNull(diagnostico);
+        assertEquals("Diagnosticar: Vibra al frenar", diagnostico.getDescripcion());
+        assertEquals(0.0, diagnostico.getCosto(), 0.001);
+        assertEquals(EstadoAprobacion.APROBADO, diagnostico.getAprobacion());
+        assertEquals(EstadoTrabajo.PENDIENTE, diagnostico.getEstado());
+        assertFalse(orden.estaCerrada());
+    }
+
+    public void testTrabajoNoPuedeFinalizarSinHaberseIniciado() {
+        Taller taller = new Taller();
+        Vehiculo v = vehiculo("EST001");
+        OrdenTrabajo orden = taller.registrarProblemaInformado(v, "Problema", LocalDate.of(2026, 9, 1), null);
+        Trabajo diagnostico = orden.getDiagnosticoInicial();
+
+        try {
+            taller.finalizarTrabajo(v, diagnostico.getId());
+            fail("No debería pasar directamente de PENDIENTE a TERMINADO");
+        } catch (IllegalStateException e) {
+            // esperado
+        }
+
+        assertEquals(EstadoTrabajo.PENDIENTE, diagnostico.getEstado());
+    }
+
+    public void testCostoAutorizadoSoloSumaTrabajosAprobados() {
+        Taller taller = new Taller();
+        Vehiculo v = vehiculo("CST001");
+        prepararEstructura(v);
+        taller.registrarProblemaInformado(v, "Problema");
+        completarDiagnostico(taller, v);
+
+        Trabajo aprobado = taller.registrarTrabajoPrincipal(v, "Aprobado", "MOTOR", 1000, true);
+        Trabajo pendiente = taller.registrarTrabajoPrincipal(v, "Pendiente", "FRENOS", 500, false);
+
+        assertEquals(1500.0, taller.costoOrden(v), 0.001);
+        assertEquals(1000.0, taller.costoAutorizadoOrden(v), 0.001);
+
+        taller.aprobarTrabajo(v, pendiente.getId());
+        assertEquals(1500.0, taller.costoAutorizadoOrden(v), 0.001);
+        assertEquals(EstadoAprobacion.APROBADO, aprobado.getAprobacion());
     }
 
     public void testTrabajoDerivadoBloqueaCierreDelPadre() {
@@ -40,13 +100,14 @@ public class TallerHito2Test extends TestCase {
         prepararEstructura(v);
         OrdenTrabajo orden = taller.registrarProblemaInformado(
                 v, "Ruido en distribución", LocalDate.of(2026, 9, 1), null);
+        completarDiagnostico(taller, v);
 
         Trabajo padre = taller.registrarTrabajoPrincipal(v, "Cambiar correa", "CORREA", 5000, true);
         Trabajo derivado = taller.registrarTrabajoDerivado(v, padre.getId(), "Cambiar tensor", "TENSOR", 2500);
 
         try {
-            taller.finalizarTrabajo(v, padre.getId());
-            fail("El padre no debería poder finalizar con un hijo pendiente");
+            taller.iniciarTrabajo(v, padre.getId());
+            fail("El padre no debería poder iniciarse con un hijo pendiente");
         } catch (IllegalStateException e) {
             // esperado
         }
@@ -65,6 +126,7 @@ public class TallerHito2Test extends TestCase {
         Vehiculo v = vehiculo("RAM002");
         prepararEstructura(v);
         taller.registrarProblemaInformado(v, "Problema complejo", LocalDate.of(2026, 9, 2), null);
+        completarDiagnostico(taller, v);
 
         Trabajo a = taller.registrarTrabajoPrincipal(v, "A", "MOTOR", 100, true);
         Trabajo b = taller.registrarTrabajoDerivado(v, a.getId(), "B", "DIST", 200);
@@ -86,6 +148,8 @@ public class TallerHito2Test extends TestCase {
         Vehiculo v = vehiculo("LIFO01");
         prepararEstructura(v);
         taller.registrarProblemaInformado(v, "Problema", LocalDate.of(2026, 9, 2), null);
+        completarDiagnostico(taller, v);
+
         Trabajo padre = taller.registrarTrabajoPrincipal(v, "Original", "MOTOR", 100, true);
         Trabajo primero = taller.registrarTrabajoDerivado(v, padre.getId(), "Falla 1", "DIST", 10);
         Trabajo segundo = taller.registrarTrabajoDerivado(v, padre.getId(), "Falla 2", "CORREA", 20);
@@ -103,10 +167,14 @@ public class TallerHito2Test extends TestCase {
         Vehiculo v = vehiculo("APR001");
         prepararEstructura(v);
         taller.registrarProblemaInformado(v, "Problema", LocalDate.of(2026, 9, 3), null);
+        completarDiagnostico(taller, v);
+
         Trabajo padre = taller.registrarTrabajoPrincipal(v, "Trabajo base", "MOTOR", 1000, true);
         Trabajo extra = taller.registrarTrabajoDerivado(v, padre.getId(), "Trabajo opcional", "DIST", 500);
 
         assertEquals(1500.0, taller.costoOrden(v), 0.001);
+        assertEquals(1000.0, taller.costoAutorizadoOrden(v), 0.001);
+
         taller.rechazarTrabajo(v, extra.getId());
         assertEquals(1000.0, taller.costoAutorizadoOrden(v), 0.001);
         assertEquals(EstadoTrabajo.RECHAZADO, extra.getEstado());
@@ -120,9 +188,11 @@ public class TallerHito2Test extends TestCase {
         Taller taller = new Taller();
         Vehiculo v = vehiculo("REP201");
         prepararEstructura(v);
-        Tallerista t = new Tallerista("Ana");
+        Tallerista t = new Tallerista(1, "Ana");
         taller.registrarTallerista(t);
         taller.registrarProblemaInformado(v, "Dos problemas", LocalDate.of(2026, 9, 4), null);
+        completarDiagnostico(taller, v);
+
         Trabajo a = taller.registrarTrabajoPrincipal(v, "Motor", "MOTOR", 100, true);
         Trabajo b = taller.registrarTrabajoPrincipal(v, "Frenos", "FRENOS", 100, true);
         taller.atenderSiguiente();
@@ -140,9 +210,11 @@ public class TallerHito2Test extends TestCase {
         Taller taller = new Taller();
         Vehiculo v = vehiculo("REP202");
         prepararEstructura(v);
-        Tallerista t = new Tallerista("Ana");
+        Tallerista t = new Tallerista(2, "Ana");
         taller.registrarTallerista(t);
         taller.registrarProblemaInformado(v, "Un problema", LocalDate.of(2026, 9, 4), null);
+        completarDiagnostico(taller, v);
+
         Trabajo a = taller.registrarTrabajoPrincipal(v, "Motor", "MOTOR", 100, true);
         taller.atenderSiguiente();
 
@@ -158,6 +230,8 @@ public class TallerHito2Test extends TestCase {
         Vehiculo v = vehiculo("BLQ001");
         prepararEstructura(v);
         taller.registrarProblemaInformado(v, "Problema", LocalDate.of(2026, 9, 5), null);
+        completarDiagnostico(taller, v);
+
         Trabajo a = taller.registrarTrabajoPrincipal(v, "A", "MOTOR", 1, true);
         Trabajo b = taller.registrarTrabajoDerivado(v, a.getId(), "B", "DIST", 1);
         taller.aprobarTrabajo(v, b.getId());
@@ -243,10 +317,12 @@ public class TallerHito2Test extends TestCase {
         Taller taller = new Taller();
         Vehiculo v = vehiculo("FIN201");
         prepararEstructura(v);
-        taller.registrarTallerista(new Tallerista("Ana"));
+        taller.registrarTallerista(new Tallerista(3, "Ana"));
         taller.registrarProblemaInformado(v, "Problema");
+        completarDiagnostico(taller, v);
         taller.registrarTrabajoPrincipal(v, "Trabajo", "MOTOR", 100, true);
         taller.atenderSiguiente();
+
         try {
             taller.finalizarVehiculo(v);
             fail("No debería finalizar con una rama pendiente");

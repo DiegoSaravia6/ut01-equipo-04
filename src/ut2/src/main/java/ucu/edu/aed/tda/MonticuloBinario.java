@@ -1,8 +1,6 @@
 package ucu.edu.aed.tda;
 
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -14,21 +12,19 @@ public class MonticuloBinario<T> {
     private Object[] elementos;
     private int tamaño;
     private final Comparator<T> comparator;
-    private final Map<T, Integer> indiceElementos;
     private static final int CAPACIDAD_INICIAL = 10;
 
     public MonticuloBinario(Comparator<T> comparator) {
         if (comparator == null) throw new IllegalArgumentException("El comparator no puede ser null");
         this.comparator = comparator;
         this.elementos = new Object[CAPACIDAD_INICIAL];
-        this.indiceElementos = new HashMap<>();
     }
 
     public void insertar(T dato) {
         if (dato == null) throw new IllegalArgumentException("El dato no puede ser null");
         asegurarCapacidad();
         elementos[tamaño] = dato;
-        indiceElementos.put(dato, tamaño);
+        actualizarIndice(dato, tamaño);
         subir(tamaño);
         tamaño++;
     }
@@ -41,39 +37,38 @@ public class MonticuloBinario<T> {
     public T extraerPrimero() {
         if (esVacio()) throw new NoSuchElementException("El montículo está vacío");
         T resultado = elemento(0);
-        indiceElementos.remove(resultado);
         tamaño--;
+        elementos[0] = elementos[tamaño];
+        elementos[tamaño] = null;
+        actualizarIndice(resultado, -1);
         if (tamaño > 0) {
-            T ultimoElemento = elemento(tamaño);
-            elementos[0] = ultimoElemento;
-            indiceElementos.put(ultimoElemento, 0);
+            actualizarIndice(elemento(0), 0);
             bajar(0);
         }
-        elementos[tamaño] = null;
         return resultado;
     }
 
-    /** Remover por valor cuesta O(log n) para localizarlo y O(log n) para restaurar el heap. */
+    /** Remover por valor cuesta O(n) para localizarlo y O(log n) para restaurar el heap. */
     public boolean remover(T dato) {
         int i = indiceDe(dato);
         if (i < 0) return false;
-        indiceElementos.remove(dato);
         tamaño--;
         if (i == tamaño) {
             elementos[i] = null;
+            actualizarIndice(dato, -1);
             return true;
         }
-        T ultimoElemento = elemento(tamaño);
-        elementos[i] = ultimoElemento;
-        indiceElementos.put(ultimoElemento, i);
+        elementos[i] = elementos[tamaño];
         elementos[tamaño] = null;
+        actualizarIndice(dato, -1);
+        actualizarIndice(elemento(i), i);
         reordenarIndice(i);
         return true;
     }
 
     /**
      * Reordena un elemento cuyo criterio de prioridad cambió.
-     * La localización es O(1), la reparación del heap O(log n).
+     * La localización es O(n), la reparación del heap O(log n).
      */
     public boolean reordenar(T dato) {
         int i = indiceDe(dato);
@@ -90,8 +85,14 @@ public class MonticuloBinario<T> {
 
     public boolean contiene(T dato) { return indiceDe(dato) >= 0; }
     private int indiceDe(T dato) {
-        Integer indice = indiceElementos.get(dato);
-        return indice != null ? indice : -1;
+        if (dato instanceof IndexableMonticulo) {
+            int i = ((IndexableMonticulo) dato).getIndiceMonticulo();
+            if (i >= 0 && i < tamaño && elemento(i) == dato) return i;
+        }
+        for (int i = 0; i < tamaño; i++) {
+            if (Objects.equals(elemento(i), dato)) return i;
+        }
+        return -1;
     }
 
     private void subir(int indice) {
@@ -121,12 +122,17 @@ public class MonticuloBinario<T> {
     private int padre(int i) { return (i - 1) / 2; }
     private int comparar(int i, int j) { return comparator.compare(elemento(i), elemento(j)); }
     private void intercambiar(int i, int j) {
-        T ei = elemento(i);
-        T ej = elemento(j);
-        elementos[i] = ej;
-        elementos[j] = ei;
-        indiceElementos.put(ej, i);
-        indiceElementos.put(ei, j);
+        Object tmp = elementos[i];
+        elementos[i] = elementos[j];
+        elementos[j] = tmp;
+        actualizarIndice(elemento(i), i);
+        actualizarIndice(elemento(j), j);
+    }
+
+    private void actualizarIndice(T dato, int indice) {
+        if (dato instanceof IndexableMonticulo) {
+            ((IndexableMonticulo) dato).setIndiceMonticulo(indice);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -135,18 +141,17 @@ public class MonticuloBinario<T> {
     private void asegurarCapacidad() {
         if (tamaño < elementos.length) return;
         Object[] nuevo = new Object[elementos.length * 2];
-        for (int i = 0; i < tamaño; i++) {
-            nuevo[i] = elementos[i];
-            indiceElementos.put(elemento(i), i);
-        }
+        for (int i = 0; i < tamaño; i++) nuevo[i] = elementos[i];
         elementos = nuevo;
     }
 
     public int tamaño() { return tamaño; }
     public boolean esVacio() { return tamaño == 0; }
     public void vaciar() {
-        for (int i = 0; i < tamaño; i++) elementos[i] = null;
-        indiceElementos.clear();
+        for (int i = 0; i < tamaño; i++) {
+            actualizarIndice(elemento(i), -1);
+            elementos[i] = null;
+        }
         tamaño = 0;
     }
 }

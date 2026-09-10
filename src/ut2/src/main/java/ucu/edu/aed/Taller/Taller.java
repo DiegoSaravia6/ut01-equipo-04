@@ -100,7 +100,8 @@ public class Taller {
 
         vehiculo.registrarIngreso(TipoIngreso.MANTENIMIENTO_PLANIFICADO, descripcionMantenimiento);
         if (compatibilidadHito1) {
-            vehiculo.agregarReparacion(new Reparacion(descripcionMantenimiento.trim(), "Mantenimiento planificado"));
+            vehiculo.agregarReparacion(new Reparacion(
+                    descripcionMantenimiento.trim(), "Mantenimiento planificado"));
         }
 
         OrdenTrabajo orden = crearOrden(vehiculo, fechaIngreso);
@@ -132,6 +133,14 @@ public class Taller {
 
         vehiculo.registrarIngreso(TipoIngreso.PROBLEMA_INFORMADO, problemaInformado);
         OrdenTrabajo orden = crearOrden(vehiculo, fechaIngreso);
+
+        // Un problema informado no es todavía una reparación conocida.
+        // Se crea un diagnóstico de costo 0 que debe resolverse antes de cerrar la orden.
+        orden.agregarDiagnosticoInicial(
+                problemaInformado.trim(),
+                vehiculo.getParteRaiz()
+        );
+
         completarIngreso(vehiculo, fechaEntregaComprometida);
         return orden;
     }
@@ -180,14 +189,18 @@ public class Taller {
 
     /**
      * Reprograma un vehículo aún en espera. Buscar la patente cuesta O(log n)
-     * en el AVL; reordenar el heap cuesta O(n + log n) porque el heap no mantiene
-     * un índice auxiliar de posiciones.
+     * en el AVL; el vehículo recuerda su posición en el heap, por lo que restaurar
+     * la prioridad luego de cambiar la fecha cuesta O(log n).
      */
     public void reprogramarVehiculo(String patente, LocalDate nuevaFecha) {
         Vehiculo vehiculo = buscarVehiculoPorPatente(patente);
         if (vehiculo == null) throw new IllegalArgumentException("No existe el vehículo " + patente);
         if (!vehiculosEnEspera.contiene(vehiculo)) {
             throw new IllegalStateException("El vehículo ya no está en espera de atención");
+        }
+        OrdenTrabajo orden = vehiculo.getOrdenActual();
+        if (nuevaFecha != null && orden != null && nuevaFecha.isBefore(orden.getFechaIngreso())) {
+            throw new IllegalArgumentException("La nueva fecha comprometida no puede ser anterior al ingreso");
         }
         vehiculo.reprogramarEntrega(nuevaFecha);
         vehiculosEnEspera.reordenar(vehiculo);
@@ -222,7 +235,14 @@ public class Taller {
 
     public void registrarTallerista(Tallerista tallerista) {
         if (tallerista == null) throw new IllegalArgumentException("El tallerista no puede ser null");
+        if (buscarTalleristaPorId(tallerista.getId()) != null) {
+            throw new IllegalStateException("Ya existe un tallerista con ID " + tallerista.getId());
+        }
         talleristas.agregar(tallerista);
+    }
+
+    public Tallerista buscarTalleristaPorId(int id) {
+        return talleristas.buscar(t -> t.getId() == id);
     }
 
     public Tallerista buscarTalleristaDisponible() {
@@ -273,7 +293,7 @@ public class Taller {
     // TRABAJOS RAMIFICADOS DEL HITO 2
     // =========================================================
 
-    public Reparacion registrarTrabajoPrincipal(
+    public Trabajo registrarTrabajoPrincipal(
             Vehiculo vehiculo, String descripcion, String codigoParte,
             double costo, boolean aprobado) {
         OrdenTrabajo orden = ordenDe(vehiculo);
@@ -281,7 +301,7 @@ public class Taller {
         return orden.agregarTrabajoPrincipal(descripcion, parte, costo, aprobado);
     }
 
-    public Reparacion registrarTrabajoDerivado(
+    public Trabajo registrarTrabajoDerivado(
             Vehiculo vehiculo, int idTrabajoOrigen, String descripcion,
             String codigoParte, double costo) {
         OrdenTrabajo orden = ordenDe(vehiculo);
@@ -314,7 +334,7 @@ public class Taller {
             throw new IllegalStateException("El vehículo no está siendo trabajado");
         }
         OrdenTrabajo orden = ordenDe(vehiculo);
-        orden.suspenderTrabajoPorRepuesto(idTrabajo);
+        orden.suspenderPorRepuesto(idTrabajo);
 
         if (!orden.tieneTrabajoEjecutable()) {
             Tallerista tallerista = buscarTalleristaAsignado(vehiculo);
@@ -325,14 +345,14 @@ public class Taller {
     }
 
     public void reanudarTrabajoPorRepuesto(Vehiculo vehiculo, int idTrabajo) {
-        ordenDe(vehiculo).reanudarTrabajoPorRepuesto(idTrabajo);
+        ordenDe(vehiculo).reanudarPorRepuesto(idTrabajo);
     }
 
-    public ListaArreglo<Reparacion> consultarOrdenPendiente(Vehiculo vehiculo) {
+    public ListaArreglo<Trabajo> consultarOrdenPendiente(Vehiculo vehiculo) {
         return ordenDe(vehiculo).ordenPendiente();
     }
 
-    public ListaArreglo<Reparacion> consultarTrabajosBloqueados(Vehiculo vehiculo, int idTrabajo) {
+    public ListaArreglo<Trabajo> consultarTrabajosBloqueados(Vehiculo vehiculo, int idTrabajo) {
         return ordenDe(vehiculo).trabajosBloqueadosPor(idTrabajo);
     }
 
@@ -420,16 +440,4 @@ public class Taller {
     public int cantidadTalleristas() { return talleristas.tamaño(); }
     public int cantidadVehiculosProntos() { return vehiculosProntos.tamaño(); }
     public boolean estaProntoParaRetirar(Vehiculo vehiculo) { return vehiculosProntos.contiene(vehiculo); }
-    public boolean tieneTrabajoEjecutable() {
-    final boolean[] existe = {false};
-
-    trabajos.preOrder(r -> {
-        if (r.isAprobado()
-                && r.getEstado() == EstadoReparacion.Pendiente) {
-            existe[0] = true;
-        }
-    });
-
-    return existe[0];
-}
 }

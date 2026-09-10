@@ -45,7 +45,7 @@ Se incorporan:
 |---|---:|---:|---:|---:|
 | Buscar | O(h), peor O(n) | O(log n) | O(n) | O(n) si se busca por valor |
 | Insertar | O(h), peor O(n) | O(log n) | O(n) para localizar padre / O(1) con referencia | O(log n) |
-| Eliminar | O(h), peor O(n) | O(log n) | O(n) + tamaño del subárbol | O(log n) raíz; O(n + log n) por valor |
+| Eliminar | O(h), peor O(n) | O(log n) | O(n) + tamaño del subárbol | O(log n) raíz; O(log n) para elementos indexables / O(n + log n) genérico por valor |
 | Ver primero | — | — | — | O(1) |
 | Recorrido completo | O(n) | O(n) | O(n) | O(n) para inspeccionar todos |
 | Espacio auxiliar recursivo | O(h) | O(log n) | O(h) | O(1) en reordenamiento |
@@ -78,13 +78,17 @@ No existe una profundidad fija. Cada `Trabajo` referencia una `ParteVehiculo` co
 
 `OrdenTrabajo` contiene un `ArbolGeneral<Trabajo>` con una raíz técnica de costo 0. Sus hijos son trabajos principales. Los hijos de un trabajo son fallas o trabajos que se desprendieron de él.
 
+Cuando el vehículo ingresa por un **problema informado**, la orden crea automáticamente un trabajo de diagnóstico aprobado y de costo 0 sobre la raíz del vehículo. Así la orden no puede quedar vacía ni cerrarse antes de diagnosticar el problema. Las reparaciones detectadas durante ese diagnóstico pueden agregarse como trabajos derivados para conservar quién las originó.
+
 Esto conserva explícitamente la relación “qué trabajo originó cuál”, cosa que la pila lineal del Hito 1 no podía representar.
 
 ### 3. Cierre y orden de ejecución
 
-Un trabajo solamente puede finalizar cuando sus hijos están cerrados (`TERMINADO` o `RECHAZADO`). Por transitividad, esto garantiza que todos los descendientes estén resueltos antes de cerrar un trabajo padre.
+Un trabajo sigue una transición simple: `PENDIENTE -> EN_PROGRESO -> TERMINADO`. No puede finalizarse directamente desde `PENDIENTE`. Además, solamente puede iniciarse/finalizar cuando sus hijos están cerrados (`TERMINADO` o `RECHAZADO`). Por transitividad, esto garantiza que todos los descendientes estén resueltos antes de cerrar un trabajo padre.
 
 La consulta de orden pendiente utiliza **postorden**, porque los hijos deben resolverse antes que el padre. Entre trabajos hermanos se usa **LIFO**: el último problema detectado se procesa primero. Esta elección conserva la regla de la pila de reparaciones del Hito 1.
+
+`tieneTrabajoEjecutable()` recorre el árbol una sola vez y verifica si existe algún trabajo `PENDIENTE`, aprobado y sin hijos abiertos. Su costo es O(n) para una orden de n trabajos.
 
 ### 4. Espera de repuestos
 
@@ -99,6 +103,8 @@ Gracias al puntero al padre de `ElementoArbolGeneral`, se pueden consultar los t
 Cada trabajo registra costo y estado de aprobación.
 
 Política elegida para rechazo: **un trabajo rechazado cierra esa rama sin ejecutarla**. El trabajo y sus descendientes quedan `RECHAZADO`; dejan de bloquear al padre y no se incluyen en el costo autorizado. Se conserva el costo propuesto para poder explicar qué se presupuestó.
+
+El **costo propuesto** suma todos los trabajos presupuestados. El **costo autorizado** suma solamente los trabajos cuyo `EstadoAprobacion` es `APROBADO`; los trabajos todavía `PENDIENTE` tampoco se consideran autorizados.
 
 Se puede consultar:
 
@@ -128,7 +134,7 @@ Criterio elegido:
 
 `proximoVehiculo()` es O(1) y `atenderSiguiente()` O(log n).
 
-La reprogramación modifica la fecha y restaura el heap. En esta implementación localizar la posición dentro del heap cuesta O(n) y la reparación del heap O(log n). Se dejó así deliberadamente para mantener la estructura simple y poder justificar una posible optimización futura con un índice de posiciones.
+La reprogramación modifica la fecha y restaura el heap. `Vehiculo` implementa `IndexableMonticulo` y recuerda su posición actual; cada intercambio actualiza ese índice. Así, al cambiar la prioridad no es necesario recorrer el heap para localizar el vehículo y la restauración cuesta O(log n). Para tipos genéricos no indexables, el montículo conserva la búsqueda lineal como alternativa.
 
 ## Cinco operaciones/consultas relevantes
 
@@ -187,6 +193,9 @@ Se incluyen los tests del Hito 1 y nuevos tests de:
 - eliminación de subárbol y ancestros;
 - heap, crecimiento y reprogramación de prioridad;
 - estructura de partes del vehículo;
+- diagnóstico automático al ingresar por problema informado;
+- transición obligatoria `PENDIENTE -> EN_PROGRESO -> TERMINADO`;
+- costo autorizado que excluye trabajos pendientes de aprobación;
 - trabajos con múltiples niveles de derivación;
 - cierre bloqueado por descendientes;
 - orden LIFO entre hermanos;
@@ -198,7 +207,7 @@ Se incluyen los tests del Hito 1 y nuevos tests de:
 - prioridad por fecha comprometida y FIFO sin fecha;
 - reprogramación de un vehículo ya ingresado.
 
-En la validación realizada durante el desarrollo, **255 tests pasaron y 0 fallaron** usando un runner local compatible con los tests JUnit 3 del proyecto. Antes de entregar conviene ejecutar también `mvn clean test` en la máquina del equipo.
+En la validación realizada durante el desarrollo, **258 tests pasaron y 0 fallaron** usando un runner local compatible con los tests JUnit 3 del proyecto. Antes de entregar conviene ejecutar también `mvn clean test` en la máquina del equipo.
 
 ## Uso de IA
 
@@ -212,3 +221,10 @@ Se utilizó IA generativa como apoyo para:
 - revisar compatibilidad con el Hito 1 y documentación.
 
 El código, las decisiones de diseño, las complejidades, los recorridos, las rotaciones y las modificaciones deben ser comprendidos y defendidos por todos los integrantes del equipo.
+
+
+## Ajustes finales v3
+- Talleristas identificados por ID único (el nombre deja de ser identificador).
+- No se permite rechazar un trabajo que ya está EN_PROGRESO o TERMINADO.
+- La reprogramación rechaza fechas comprometidas anteriores a la fecha de ingreso.
+- Los vehículos guardan su posición en el montículo mediante `IndexableMonticulo`, evitando el recorrido lineal al reordenar por cambio de prioridad; la reparación del heap queda O(log n).
